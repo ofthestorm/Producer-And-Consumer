@@ -7,11 +7,23 @@ package pers.keke.pnc;
 
 
 import javafx.fxml.FXML;
+import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.image.ImageView;
+import java.util.HashMap;
+import java.util.Map;
 
 
 public class WindowController {
+
+    public WindowController() {
+
+    }
+
+    @FXML
+    public void initialize () {
+        initMap();
+    }
 
     @FXML private TextArea textArea;
 
@@ -35,82 +47,64 @@ public class WindowController {
     @FXML private ImageView cake7;
     @FXML private ImageView cake8;
 
-    @FXML private ImageView cakeFromChef;
-    @FXML private ImageView doughnutFromChef;
-    @FXML private ImageView cakeForC1;
-    @FXML private ImageView cakeForC2;
-    @FXML private ImageView doughnutForC1;
-    @FXML private ImageView doughnutForC2;
+    @FXML private Label num_chef1;
+    @FXML private Label num_chef2;
+    @FXML private Label num_dn1;
+    @FXML private Label num_dn2;
+    @FXML private Label num_ck1;
+    @FXML private Label num_ck2;
 
     private Container container = new Container();
-    private Container.Dessert [] array = container.getDesserts();
 
-    private ImageView [] doughnuts = new ImageView[container.getContainerSize()];
-    private ImageView [] cakes = new ImageView[container.getContainerSize()];
-    
+    protected Container.Dessert [] desserts = container.getDesserts();
 
-//    Thread produceThread1 = new Thread(new Producer(container), "Chef     1");
-//    Thread produceThread2 = new Thread(new Producer(container), "Chef     2");
-//    Thread consumeThread1 = new Thread(new Consumer(container), "Customer 1");
-//    Thread consumeThread2 = new Thread(new Consumer(container), "Customer 2");
+    Map<String,ImageView> map = new HashMap<String,ImageView>();
 
     Producer producer1 = new Producer(container);
     Producer producer2 = new Producer(container);
     Consumer consumer1 = new Consumer(container);
     Consumer consumer2 = new Consumer(container);
+    UpdateText updateText = new UpdateText(this);
+    UpdateImage updateImage = new UpdateImage(this);
 
     Thread produceThread1 = new Thread(producer1, "Chef     1");
     Thread produceThread2 = new Thread(producer2, "Chef     2");
     Thread consumeThread1 = new Thread(consumer1, "Customer 1");
     Thread consumeThread2 = new Thread(consumer2, "Customer 2");
-
-    UpdateText updateText = new UpdateText(this);
     Thread updateTextThread = new Thread(updateText,"Update TextArea");
+    Thread updateImageThread = new Thread(updateImage,"Update Image");
 
-
+    @FXML
     public void startPressed() throws InterruptedException {
-        System.out.println("start pressed");
+        updateImageThread.setPriority(10);
+        updateImageThread.start();
+
         if(!produceThread1.isAlive() && !produceThread2.isAlive()
                 && !consumeThread1.isAlive() && !consumeThread2.isAlive()) {
-            producer1.setExit(false);
-            producer2.setExit(false);
-            consumer1.setExit(false);
-            consumer2.setExit(false);
-
+            doughnut0.setVisible(true);
+            cake0.setVisible(true);
+            updateTextThread.start();
             produceThread1.start();
             produceThread2.start();
             consumeThread1.start();
             consumeThread2.start();
 
-//            Thread update = new Thread(() -> {
-//                    try {
-//                        Thread.sleep(1000);
-//                        updateText();
-//
-//                    } catch (Exception e) {
-//                        e.printStackTrace();
-//                    }
-//
-//            });
-//         //   update.setDaemon(true);
-//            update.start();
-            updateTextThread.start();
-
         } else {
-            producer1.setExit(false);
-            producer2.setExit(false);
-            consumer1.setExit(false);
-            consumer2.setExit(false);
-            produceThread1.join();
-            produceThread2.join();
-            consumeThread1.join();
-            consumeThread2.join();
+//            producer1.setExit(false);
+//            producer2.setExit(false);
+//            consumer1.setExit(false);
+//            consumer2.setExit(false);
+//            produceThread1.join();
+//            produceThread2.join();
+//            consumeThread1.join();
+//            consumeThread2.join();
         }
 
     }
 
+    @FXML
     public void stopPressed() {
-        System.out.println("stop pressed");
+
         try {
             if(produceThread1.isAlive() && produceThread2.isAlive()
                     && consumeThread1.isAlive() && consumeThread2.isAlive()) {
@@ -122,8 +116,8 @@ public class WindowController {
                 producer2.setExit(true);
                 consumer1.setExit(true);
                 consumer2.setExit(true);
-
                 updateText.setExit(true);
+                updateImage.setExit(true);
 
             } else {
                 //
@@ -131,52 +125,59 @@ public class WindowController {
         } catch (Exception e) {
             e.printStackTrace();
         }
-
     }
-
-   // private String textContent = "";
 
     public void updateText() {
-    //    textContent += container.getLog() + "\n" ;
-    //    textArea.setText(textContent);
         textArea.setText(container.getLog());
         textArea.setScrollTop(Double.MAX_VALUE);//auto scroll to the bottom
-
     }
-//    textArea.textProperty().addListener(new ChangeListener<Object>() {
-//        @Override
-//        public void changed(ObservableValue<?> observable, Object oldValue,
-//                Object newValue) {
-//            textArea.setScrollTop(Double.MAX_VALUE); //this will scroll to the bottom
-//            //use Double.MIN_VALUE to scroll to the top
-//        }
-//    });
 
-
-
-    private void updateImage() {
+    public void updateImage() {
         for(int i = 0 ; i < container.getContainerSize() ; i++) {
-            switch (array[i]) {
+            switch (desserts[i]) {
                 case doughnut: {
-                    //doughnut(i).setvisible(true)
+                    map.get("doughnut"+i).setVisible(true);
+                    map.get("cake"+i).setVisible(false);
                 } break;
                 case cake: {
-                    //cake(i).setvisible(true)
+                    map.get("cake"+i).setVisible(true);
+                    map.get("doughnut"+i).setVisible(false);
                 } break;
                 case none: {
-                    //doughnut(i).setvisible(false)
-                    //cake(i).setvisible(false)
+                    map.get("cake"+i).setVisible(false);
+                    map.get("doughnut"+i).setVisible(false);
                 } break;
                 default: break;
             }
         }
     }
 
+    private void initMap() {
+        map.put("doughnut0",doughnut0);
+        map.put("doughnut1",doughnut1);
+        map.put("doughnut2",doughnut2);
+        map.put("doughnut3",doughnut3);
+        map.put("doughnut4",doughnut4);
+        map.put("doughnut5",doughnut5);
+        map.put("doughnut6",doughnut6);
+        map.put("doughnut7",doughnut7);
+        map.put("doughnut8",doughnut8);
 
+        map.put("cake0",cake0);
+        map.put("cake1",cake1);
+        map.put("cake2",cake2);
+        map.put("cake3",cake3);
+        map.put("cake4",cake4);
+        map.put("cake5",cake5);
+        map.put("cake6",cake6);
+        map.put("cake7",cake7);
+        map.put("cake8",cake8);
+    }
 }
 
 
 class UpdateText implements Runnable {
+
     private WindowController controller;
 
     public UpdateText(WindowController controller) {
@@ -194,6 +195,34 @@ class UpdateText implements Runnable {
         while (!exit) {
             try {
                 controller.updateText();
+                System.out.println("Text\n");
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+}
+
+class UpdateImage implements Runnable {
+    private WindowController controller;
+
+    public UpdateImage(WindowController controller) {
+        this.controller = controller;
+    }
+
+    private boolean exit = false;
+
+    public void setExit(boolean flag) {
+        exit = flag;
+    }
+
+    @Override
+    public void run() {
+        while (!exit) {
+            try {
+                controller.updateImage();
+                System.out.println("Image\n");
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
                 e.printStackTrace();

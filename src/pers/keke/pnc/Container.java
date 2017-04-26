@@ -12,8 +12,17 @@ public class Container {
 	static Container container = new Container();
 	// Define the max length of the queue
 	private final int MAX_SIZE = 9 ;
-	
-	private Dessert [] desserts = new Dessert[MAX_SIZE];
+	private int consumeIndex = 0;
+	private int produceIndex = 0;
+
+	private Semaphore mutex = new Semaphore(1);
+	private Semaphore full = new Semaphore(0);
+	private Semaphore empty = new Semaphore(MAX_SIZE);
+
+	private Dessert [] desserts = new Dessert[] {
+			Dessert.none,Dessert.none,Dessert.none,Dessert.none,Dessert.none,
+			Dessert.none,Dessert.none,Dessert.none,Dessert.none
+	};
 
 	public enum Dessert {
 		doughnut,
@@ -21,33 +30,19 @@ public class Container {
 		none
 	}
 
-	public Dessert [] getDesserts() {
-		return desserts;
-	}
+	private String log = "";
 
-	public int getContainerSize() {
-		return MAX_SIZE;
-	}
-
-	private Semaphore mutex = new Semaphore(1);
-	private Semaphore full = new Semaphore(0);
-	private Semaphore empty = new Semaphore(MAX_SIZE);
-	
-	private int consumeIndex = 0;
-	private int produceIndex = 0;
-//	private int count = 0;
 	
 	public void consume() {
 		
 		try {
 			full.acquire();
 			mutex.acquire();
-			//取走
+
 			desserts[consumeIndex] = Dessert.none;
-			//count--;
-		//	System.out.println(Thread.currentThread().getName() + " consume " + consumeIndex);
-			System.out.println(getCurrentLog());
+
 			setLog(getCurrentLog());
+			System.out.println("Consume\n");
 
 			consumeIndex++;
 			consumeIndex %= MAX_SIZE;
@@ -73,9 +68,9 @@ public class Container {
 			} else if (getID() == 2) {
 				desserts[produceIndex] = Dessert.cake;
 			}
-		//	System.out.println(Thread.currentThread().getName() + " produce " + produceIndex);
-			System.out.println(getCurrentLog());
+
             setLog(getCurrentLog());
+			System.out.println("Produce\n");
 
 			produceIndex ++;
 			produceIndex %= MAX_SIZE;
@@ -117,8 +112,6 @@ public class Container {
 		}
 		return name + condition + Integer.toString(index) ;
 	}
-	
-	private String log = "";
 
 	public String getLog() {
 		return log;
@@ -127,14 +120,17 @@ public class Container {
 	private void setLog(String temp) {
 		log += temp + "\n";
 	}
-	
 
-	
+	public Dessert [] getDesserts() {
+		return desserts;
+	}
+
+	public int getContainerSize() {
+		return MAX_SIZE;
+	}
+
 	public static void main(String[] args) {
 
-//	    if (Platform.isSupported(ConditionalFeature.INPUT_METHOD)) {
-//	        System.out.println("yes!");
-//        };
 		Thread produceThread1 = new Thread(new Producer(container), "Chef     1");
 		Thread produceThread2 = new Thread(new Producer(container), "Chef     2");
 		Thread consumeThread1 = new Thread(new Consumer(container), "Customer 1");

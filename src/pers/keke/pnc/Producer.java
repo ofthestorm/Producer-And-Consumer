@@ -23,7 +23,7 @@ public class Producer implements Runnable {
 		while (!exit) {
 				try {  
 					container.produce();
-					Thread.sleep(1000);
+					Thread.sleep(1500);
 				} catch (InterruptedException e) {  
 					e.printStackTrace();  
 				}
